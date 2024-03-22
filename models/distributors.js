@@ -6,4 +6,4 @@ const Distributors = new Scheme({
 }, {
     timestamps: true
 })
-module.exports = mongoose.model('distributors', Distributors);
+module.exports = mongoose.model('distributor', Distributors);
