@@ -7,7 +7,7 @@ const Upload = require('../config/common/upload');
 const Users = require('../models/users');
 const Transporter = require('../config/common/mail');
 const JWT = require('jsonwebtoken');
-const SECRETKEY =phuocdz;
+const SECRETKEY = 'phuocdz';
 
 router.post('/add-distributor', async (req, res) => {
     try {
@@ -53,7 +53,7 @@ router.post('/add-fruit', async (req, res) => {
                 "messenger": "Thêm thành công",
                 "data": result
             })
-        }else{
+        } else {
             res.json({
                 "status": 400,
                 "messenger": "Thêm không thành công",
@@ -123,15 +123,15 @@ router.get('/get-list-fruit-have-name-a-or-x', async (req, res) => {
 })
 
 
-router.put('/update-fruit-by-id/:id', async(req, res) => {
+router.put('/update-fruit-by-id/:id', async (req, res) => {
     try {
-        const {id} = req.params
+        const { id } = req.params
 
         const data = req.body
 
         const updatefruit = await Fruits.findById(id)
         let result = null
-        if(updatefruit) {
+        if (updatefruit) {
             updatefruit.name = data.name ?? updatefruit.name;
             updatefruit.quantity = data.quantity ?? updatefruit.quantity;
             updatefruit.price = data.price ?? updatefruit.price;
@@ -143,7 +143,7 @@ router.put('/update-fruit-by-id/:id', async(req, res) => {
             result = await updatefruit.save();
         }
 
-        if(result) {
+        if (result) {
             res.json({
                 "status": 200,
                 "messenger": "Cập nhật thành công",
@@ -162,16 +162,16 @@ router.put('/update-fruit-by-id/:id', async(req, res) => {
 })
 
 // lab4
-router.delete('/destroy-fruit-by-id/:id', async(req, res) => {
+router.delete('/destroy-fruit-by-id/:id', async (req, res) => {
     try {
-        const {id} = req.params
+        const { id } = req.params
         const result = await Fruits.findByIdAndDelete(id);
-        if(result) {
+        if (result) {
             res.json({
                 "status": 200,
                 "messenger": "Xóa thành công",
                 "data": result
-            }) 
+            })
         } else {
             res.json({
                 "status": 400,
@@ -184,13 +184,13 @@ router.delete('/destroy-fruit-by-id/:id', async(req, res) => {
     }
 })
 
-router.post('/add-fruit-with-file-image', Upload.array('image', 5), async(req, res) => {
+router.post('/add-fruit-with-file-image', Upload.array('image', 5), async (req, res) => {
     try {
         const data = req.body; // lấy dữ liệu từ body
-        const {files} = req
+        const { files } = req
         const urlsImage = files.map((file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`)
         const newfruit = new Fruits({
-            name : data.name,
+            name: data.name,
             quantity: data.quantity,
             price: data.price,
             status: data.status,
@@ -200,7 +200,7 @@ router.post('/add-fruit-with-file-image', Upload.array('image', 5), async(req, r
         });
 
         const result = await newfruit.save(); // thêm vào data
-        if(result) {
+        if (result) {
             res.json({
                 "status": 200,
                 "messenger": "Thêm thành công",
@@ -218,68 +218,64 @@ router.post('/add-fruit-with-file-image', Upload.array('image', 5), async(req, r
     }
 })
 
-router.post('/register-send-email',Upload.single('avatar'),async(req,res) =>{
+router.post('/register-send-email', Upload.single('avatar'), async (req, res) => {
     try {
         const data = req.body;
-        const {file} = req
+        const { file } = req
         const newUser = Users({
-          username: data.username, 
-          password : data.password,
-          email: data.email, 
-          name: data.name,
-          avatar:`${req.protocol}://${req.get("host")}/uploads/${file.filename}`, 
-          available: data.available
+            username: data.username,
+            password: data.password,
+            email: data.email,
+            name: data.name,
+            avatar: `${req.protocol}://${req.get("host")}/uploads/${file.filename}`,
+            available: data.available
         })
         const result = await newUser.save()
-        if(result)
-        {   //Gửi mail
+        if (result) {   //Gửi mail
             const mailOptions = {
                 from: "lynaxhai624@gmail.com", //email gửi đi
                 to: result.email, // email nhận
                 subject: "Đăng ký thành công", //subject
                 text: "Cảm ơn bạn đã đăng ký", // nội dung mail
-              };
+            };
             // Nếu thêm thành công result !null trả về dữ liệu
             await Transporter.sendMail(mailOptions); // gửi mail
             res.json({
-                "status" : 200,
-                "messenger" : "Thêm thành công",
-                "data" : result
+                "status": 200,
+                "messenger": "Thêm thành công",
+                "data": result
             })
-        }else
-        {// Nếu thêm không thành công result null, thông báo không thành công
+        } else {// Nếu thêm không thành công result null, thông báo không thành công
             res.json({
-                "status" : 400 ,
-                "messenger" : "Lỗi, thêm không thành công",
-                "data" : []
+                "status": 400,
+                "messenger": "Lỗi, thêm không thành công",
+                "data": []
             })
         }
     } catch (error) {
         console.log(error);
     }
 })
-router.post('/login',async (req,res)=>{
+router.post('/login', async (req, res) => {
     try {
-        const {username,password} = req.body;
-        const user = await Users.findOne({username,password})
-        if(user)
-        {   
-            const token = JWT.sign({id: user._id},SECRETKEY,{expiresIn: '1h'});
-            const refreshToken = JWT.sign({id: user._id},SECRETKEY,{expiresIn: '1d'})
+        const { username, password } = req.body;
+        const user = await Users.findOne({ username, password })
+        if (user) {
+            const token = JWT.sign({ id: user._id }, SECRETKEY, { expiresIn: '1h' });
+            const refreshToken = JWT.sign({ id: user._id }, SECRETKEY, { expiresIn: '1d' })
             res.json({
-                "status" : 200,
-                "messenger" : "Đăng nhâp thành công",
-                "data" : user,
-                "token" : token,
-                "refreshToken" : refreshToken
+                "status": 200,
+                "messenger": "Đăng nhâp thành công",
+                "data": user,
+                "token": token,
+                "refreshToken": refreshToken
             })
-        }else
-        {
+        } else {
             // Nếu thêm không thành công result null, thông báo không thành công
             res.json({
-                "status" : 400 ,
-                "messenger" : "Lỗi, đăng nhập không thành công",
-                "data" : []
+                "status": 400,
+                "messenger": "Lỗi, đăng nhập không thành công",
+                "data": []
             })
         }
     } catch (error) {
