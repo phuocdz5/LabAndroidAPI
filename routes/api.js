@@ -7,6 +7,7 @@ const Upload = require('../config/common/upload');
 const Users = require('../models/users');
 const Transporter = require('../config/common/mail');
 const JWT = require('jsonwebtoken');
+const { Error } = require('mongoose');
 const SECRETKEY = 'phuocdz';
 
 router.post('/add-distributor', async (req, res) => {
@@ -198,8 +199,8 @@ router.post('/add-fruit-with-file-image', Upload.array('image', 5), async (req, 
             description: data.description,
             id_distributor: data.id_distributor
         });
-
-        const result = await newfruit.save(); // thêm vào data
+        
+        const result = (await newfruit.save()).populate("id_distributor"); // thêm vào data
         if (result) {
             res.json({
                 "status": 200,
@@ -242,13 +243,13 @@ router.post('/register-send-email', Upload.single('avatar'), async (req, res) =>
             await Transporter.sendMail(mailOptions); // gửi mail
             res.json({
                 "status": 200,
-                "messenger": "Thêm thành công",
+                "messenger": "Đăng ký thành công",
                 "data": result
             })
         } else {// Nếu thêm không thành công result null, thông báo không thành công
             res.json({
                 "status": 400,
-                "messenger": "Lỗi, thêm không thành công",
+                "messenger": "Lỗi, đăng ký không thành công",
                 "data": []
             })
         }
@@ -274,7 +275,7 @@ router.post('/login', async (req, res) => {
             // Nếu thêm không thành công result null, thông báo không thành công
             res.json({
                 "status": 400,
-                "messenger": "Lỗi, đăng nhập không thành công",
+                "messenger": "Tài khoản hoặc mật khẩu không đúng",
                 "data": []
             })
         }
@@ -282,10 +283,30 @@ router.post('/login', async (req, res) => {
         console.log(error);
     }
 })
+router.get('/get-list-fruits', async (_req, res) => {
+    try {
+        const data = await Fruits.find().sort({ createdAt: -1 });
+        if (data) {
+            res.json({
+                "status": 200,
+                "messenger": "thành công",
+                "data": data
+            })
+        } else {
+            res.json({
+                "status": 400,
+                "messenger": "Lỗi, không thành công",
+                "data": []
+            })
+        }
+    } catch (error) {
+        console.log(error)
+    }
+})
 //thêm từ 285 trở xuống 
 router.get('/get-list-distributor', async (_req, res) => {
     try {
-        const data = await Distributors.find().sort({ createAt: -1 });
+        const data = await Distributors.find().sort({ createdAt: -1 });
         if (data) {
             res.json({
                 "status": 200,
