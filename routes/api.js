@@ -283,26 +283,7 @@ router.post('/login', async (req, res) => {
         console.log(error);
     }
 })
-router.get('/get-list-fruits', async (_req, res) => {
-    try {
-        const data = await Fruits.find().sort({ createdAt: -1 });
-        if (data) {
-            res.json({
-                "status": 200,
-                "messenger": "thành công",
-                "data": data
-            })
-        } else {
-            res.json({
-                "status": 400,
-                "messenger": "Lỗi, không thành công",
-                "data": []
-            })
-        }
-    } catch (error) {
-        console.log(error)
-    }
-})
+
 //thêm từ 285 trở xuống 
 router.get('/get-list-distributor', async (_req, res) => {
     try {
@@ -388,6 +369,27 @@ router.put('/update-distributors/:id', async(req,res)=>{
         }
     } catch (error) {
         console.log(error);
+    }
+})
+
+router.get('/get-list-fruits', async (_req, res) => {
+    try {
+        const data = await Fruits.find().sort({ createdAt: -1 });
+        if (data) {
+            res.json({
+                "status": 200,
+                "messenger": "thành công",
+                "data": data
+            })
+        } else {
+            res.json({
+                "status": 400,
+                "messenger": "Lỗi, không thành công",
+                "data": []
+            })
+        }
+    } catch (error) {
+        console.log(error)
     }
 })
 module.exports = router
