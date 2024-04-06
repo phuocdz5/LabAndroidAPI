@@ -124,43 +124,56 @@ router.get('/get-list-fruit-have-name-a-or-x', async (req, res) => {
 })
 
 
-router.put('/update-fruit-by-id/:id', async (req, res) => {
+router.put('/update-fruit-by-id/:id', Upload.array('image', 5), async (req, res) => {
     try {
         const { id } = req.params
+        const data = req.body;
+        const { files } = req;
 
-        const data = req.body
 
+
+        let url1;
         const updatefruit = await Fruits.findById(id)
-        let result = null
-        if (updatefruit) {
-            updatefruit.name = data.name ?? updatefruit.name;
-            updatefruit.quantity = data.quantity ?? updatefruit.quantity;
-            updatefruit.price = data.price ?? updatefruit.price;
-            updatefruit.status = data.status ?? updatefruit.status;
-            updatefruit.image = data.image ?? updatefruit.image;
-            updatefruit.description = data.description ?? updatefruit.description;
-            updatefruit.id_distributor = data.id_distributor ?? updatefruit.id_distributor;
+        if (files && files.length > 0) {
+            url1 = files.map((file) => `http://localhost:3000/uploads/${file.filename}`);
 
-            result = await updatefruit.save();
+        }
+        if (url1 == null) {
+            url1 = updatefruit.image;
         }
 
+        let result = null;
+        if (updatefruit) {
+            updatefruit.name = data.name ?? updatefruit.name,
+                updatefruit.quantity = data.quantity ?? updatefruit.quantity,
+                updatefruit.price = data.price ?? updatefruit.price,
+                updatefruit.status = data.status ?? updatefruit.status,
+
+
+                updatefruit.image = url1,
+
+                updatefruit.desciption = data.desciption ?? updatefruit.desciption,
+                updatefruit.id_distributor = data.id_distributor ?? updatefruit.id_distributor,
+                result = (await updatefruit.save()).populate("id_distributor");;
+        }
         if (result) {
             res.json({
-                "status": 200,
-                "messenger": "Cập nhật thành công",
-                "data": result
+                'status': 200,
+                'messenger': 'Cập nhật thành công',
+                'data': result
             })
         } else {
             res.json({
-                "status": 400,
-                "messenger": "Lỗi, Cập nhật không thành công",
-                "data": []
+                'status': 400,
+                'messenger': 'Cập nhật không thành công',
+                'data': []
             })
         }
     } catch (error) {
         console.log(error);
     }
 })
+
 
 // lab4
 router.delete('/destroy-fruit-by-id/:id', async (req, res) => {
@@ -189,18 +202,18 @@ router.post('/add-fruit-with-file-image', Upload.array('image', 5), async (req, 
     try {
         const data = req.body; // lấy dữ liệu từ body
         const { files } = req
-        const urlsImage = files.map((file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`)
+        const urlsImage = files.map((file) => `http://localhost:3000/uploads/${file.filename}`)
         const newfruit = new Fruits({
             name: data.name,
             quantity: data.quantity,
             price: data.price,
             status: data.status,
             image: urlsImage,
-            description: data.description,
+            desciption: data.desciption,
             id_distributor: data.id_distributor
         });
         
-        const result = (await newfruit.save()).populate("id_distributor"); // thêm vào data
+        const result = (await newfruit.save()).populate("id_distributor"); // thêm dòng này
         if (result) {
             res.json({
                 "status": 200,
@@ -228,7 +241,7 @@ router.post('/register-send-email', Upload.single('avatar'), async (req, res) =>
             password: data.password,
             email: data.email,
             name: data.name,
-            avatar: `${req.protocol}://${req.get("host")}/uploads/${file.filename}`,
+            avatar: `http://localhost:3000/uploads/${file.filename}`,
             available: data.available
         })
         const result = await newUser.save()
@@ -374,7 +387,7 @@ router.put('/update-distributors/:id', async(req,res)=>{
 
 router.get('/get-list-fruits', async (_req, res) => {
     try {
-        const data = await Fruits.find().sort({ createdAt: -1 });
+        const data = await Fruits.find().sort({ createdAt: -1 }).populate("id_distributor");
         if (data) {
             res.json({
                 "status": 200,
@@ -391,5 +404,48 @@ router.get('/get-list-fruits', async (_req, res) => {
     } catch (error) {
         console.log(error)
     }
+})
+router.get('/get-page-fruit', async (req, res) => {
+    // Auten
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
+    if(token == null) return res.sendStatus(401)
+    let payload;
+    JWT.verify(token, SECRETKEY, (err, _payload) => {
+        if(err instanceof JWT.TokenExpiredError) return res.sendStatus(401)
+        if(err) return res.sendStatus(403)
+        payload = _payload;
+    })
+    let perPage = 6; // số lượng sản phẩm xuất hiện trên 1 page
+    let page = req.query.page || 1; // Page truyền lên
+    let skip = (perPage * page) - perPage; // phân trang
+    let count = await Fruits.find().count(); // Lấy tổng số phần tử
+    // filltering
+    // Lọc theo tên
+    const name = {"$regex" : req.query.name ?? "", "$options": "i"}
+    // Lọc giá lớn hơn hoặc bằng giá truyền vào
+    const price = {$gte : req.query.price ?? 0}
+    // Lọc sắp xếp theo giá
+    const sort = {price : Number(req.query.sort) ?? 1}
+
+    try {
+        const data = await Fruits.find({name : name, price: price})
+                                 .populate('id_distributor')
+                                 .sort(sort)
+                                 .skip(skip)
+                                 .limit(perPage)
+        res.json({
+            "status" : 200,
+            "messenger": "Danh sách fruit",
+            "data" : {
+                "data": data,
+                "currentPage" : Number(page),
+                "totalPage" : Math.ceil(count/perPage)
+            }
+        })
+    } catch (error) {
+        console.log(error);
+    }
+
 })
 module.exports = router
