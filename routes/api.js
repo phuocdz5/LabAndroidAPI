@@ -7,7 +7,7 @@ const Upload = require('../config/common/upload');
 const Users = require('../models/users');
 const Transporter = require('../config/common/mail');
 const JWT = require('jsonwebtoken');
-const { Error } = require('mongoose');
+const orders = require('../models/orders');
 const SECRETKEY = 'phuocdz';
 
 router.post('/add-distributor', async (req, res) => {
@@ -447,5 +447,32 @@ router.get('/get-page-fruit', async (req, res) => {
         console.log(error);
     }
 
+})
+router.post("/add-order", async(req, res) => {
+    try {
+        const data = req.body;
+        const newOrder = new orders({
+            order_code: data.order_code,
+            id_user: data.id_user
+        })
+        const result = await newOrder.save(); // add vao database
+        if(result){
+            // neu add successfuly result !null tra ve du lieu
+            res.json({
+                "status": 200,
+                "messenger": "Thêm Thành công",
+                "data": result
+            })
+        }else{
+             // neu add fali result null, thông báo không thành công
+             res.json({
+                "status": 400,
+                "messenger": "error, add fali",
+                "data": null
+            })
+        }
+    } catch (error) {
+        console.log(error);
+    }
 })
 module.exports = router
